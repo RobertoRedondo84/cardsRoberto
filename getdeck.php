@@ -1,6 +1,6 @@
 
 <?php
-
+// Función para generar un mazo de cartas
 function getDeck()
 {
     $deck = [];
@@ -11,7 +11,7 @@ function getDeck()
         'picas' => 'pic',
         'rombos' => 'rom'
     ];
-
+// Generar las cartas del 1 al 13 para cada palo
     foreach ($suits as $suit => $prefix) {
         for ($value = 1; $value <= 13; $value++) {
             if ($value === 11) {
@@ -23,7 +23,7 @@ function getDeck()
             } else {
                 $imageValue = (string) $value;
             }
-
+// Agregar la carta al mazo
             $deck[] = [
                 'suit' => $suit,
                 'value' => $value,
@@ -31,7 +31,7 @@ function getDeck()
             ];
         }
     }
-
+// Agregar los comodines al mazo
     $deck[] = [
         'suit' => 'comodin',
         'value' => 'joker',

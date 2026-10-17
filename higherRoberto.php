@@ -1,12 +1,12 @@
 <?php
 require_once __DIR__ . '/getdeck.php';
-
+// Obtener el mazo de cartas y barajarlo
 $deck = getDeck();
 shuffle($deck);
 
 $player1 = [];
 $player2 = [];
-
+// Repartir 10 cartas a cada jugador
 for ($i = 0; $i < 10; $i++) {
     $player1[] = array_pop($deck);
     $player2[] = array_pop($deck);
@@ -14,7 +14,7 @@ for ($i = 0; $i < 10; $i++) {
 
 $score1 = 0;
 $score2 = 0;
-
+// Comparar las cartas de cada jugador y contar las rondas ganadas
 for ($i = 0; $i < 10; $i++) {
     if ($player1[$i]['value'] > $player2[$i]['value']) {
         $score1++;
@@ -22,7 +22,7 @@ for ($i = 0; $i < 10; $i++) {
         $score2++;
     }
 }
-
+// Determinar el resultado final del juego
 if ($score1 > $score2) {
     $result = '¡Gana el jugador 1!';
     $resultClass = 'player-one';
@@ -34,6 +34,7 @@ if ($score1 > $score2) {
     $resultClass = 'draw';
 }
 ?>
+//html del juego Higher
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -51,7 +52,7 @@ if ($score1 > $score2) {
             <h1>Higher</h1>
             <p>Diez rondas: gana quien consiga más cartas de valor superior.</p>
         </div>
-
+//html del marcador de puntuación
         <section class="scoreboard" aria-label="Resultado de la partida">
             <div class="score">
                 <span>Jugador 1</span>
@@ -68,7 +69,7 @@ if ($score1 > $score2) {
                 <?= htmlspecialchars($result, ENT_QUOTES, 'UTF-8') ?>
             </p>
         </section>
-
+//html de las cartas de los jugadores
         <div class="players">
             <?php foreach ([
                 ['name' => 'Jugador 1', 'cards' => $player1],
