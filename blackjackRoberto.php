@@ -139,16 +139,6 @@ function calculateScore(array $cards): int
             Puntuación: <strong><?= $bankScore ?></strong>
         </p>
 
-        <ul class="card-list">
-            <?php foreach ($participants['Banca'] as $card): ?>
-                <li>
-                    <img
-                        src="images/<?= htmlspecialchars($card['image'], ENT_QUOTES, 'UTF-8') ?>"
-                        alt="<?= htmlspecialchars($card['suit'] . ' ' . $card['value'], ENT_QUOTES, 'UTF-8') ?>"
-                        loading="lazy"
-                    >
-                </li>
-            <?php endforeach; ?>
         </ul>
     </section>
 

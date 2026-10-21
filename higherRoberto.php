@@ -34,7 +34,7 @@ if ($score1 > $score2) {
     $resultClass = 'draw';
 }
 ?>
-//html del juego Higher
+<!-- html del juego Higher -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -52,7 +52,7 @@ if ($score1 > $score2) {
             <h1>Higher</h1>
             <p>Diez rondas: gana quien consiga más cartas de valor superior.</p>
         </div>
-//html del marcador de puntuación
+<!--html del marcador de puntuación-->
         <section class="scoreboard" aria-label="Resultado de la partida">
             <div class="score">
                 <span>Jugador 1</span>
@@ -69,7 +69,7 @@ if ($score1 > $score2) {
                 <?= htmlspecialchars($result, ENT_QUOTES, 'UTF-8') ?>
             </p>
         </section>
-//html de las cartas de los jugadores
+<!--html de las cartas de los jugadores-->
         <div class="players">
             <?php foreach ([
                 ['name' => 'Jugador 1', 'cards' => $player1],
