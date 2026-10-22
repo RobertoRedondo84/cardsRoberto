@@ -5,93 +5,8 @@ if (!isset($_SESSION['username'])) {
     header('Location: login.php');
     exit;
 }
-?> 
-<?php
 
 require_once __DIR__ . '/getdeck.php';
-
-// Obtener el mazo de cartas y barajarlo
-$deck = getDeck();
-
-// Quitar los comodines del mazo (se quitan las dos últimas cartas que son los comodines)
-array_pop($deck);
-array_pop($deck);
-
-// Barajar el mazo
-shuffle($deck);
-
-// Crear un array para almacenar las cartas de cada participante
-$participants = [
-    'Banca' => [],
-    'Jugador 1' => [],
-    'Jugador 2' => [],
-    'Jugador 3' => [],
-    'Jugador 4' => [],
-    'Jugador 5' => [],
-];
-
-/**
- * Repartir dos cartas a cada participante
- * Se reparten dos rondas de cartas, una carta por participante en cada ronda
- */
-
-for ($round = 0; $round < 2; $round++) {
-    foreach ($participants as $name => $cards) { // Repartir una carta a cada participante (se hace 2 veces)
-        $participants[$name][] = array_pop($deck); // Tomar la última carta del mazo y asignarla al participante (2 veces por cada participante)
-    }
-}
-
-/**
- * Reparte cartas automáticamente hasta que cada participante
- * alcanza una puntuación igual o superior a 14.
- */
-foreach ($participants as $name => $cards) {
-    while (calculateScore($participants[$name]) < 14) { // Mientras la puntuación del participante sea menor a 14, se le reparte otra carta
-        $participants[$name][] = array_pop($deck); // Tomar la última carta del mazo y asignarla al participante
-    }
-}
-
-/**
- * Compara la puntuación de cada jugador con la de la banca.
- */
-$bankScore = calculateScore($participants['Banca']);
-$results = [];
-
-foreach ($participants as $name => $cards) {
-    // La banca no se compara consigo misma.
-    if ($name === 'Banca') {
-        continue;
-    }
-
-    $playerScore = calculateScore($cards);
-
-    // Determina el resultado aplicando las reglas del enunciado.
-    if ($playerScore > 21) {
-        $result = 'PIERDE';
-    } elseif ($bankScore > 21) {
-        $result = 'GANA';
-    } elseif ($playerScore > $bankScore) {
-        $result = 'GANA';
-    } elseif ($playerScore < $bankScore) {
-        $result = 'PIERDE';
-    } else {
-        $result = 'EMPATA';
-    }
-
-    // Guarda la puntuación y el resultado de cada jugador.
-    $results[$name] = [
-        'score' => $playerScore,
-        'result' => $result,
-    ];
-}
-
-
-/**
- * Calcula la puntuación de una mano de Blackjack.
- *
- * @param array $cards Cartas que tiene el participante.
- * @return int Puntuación total de la mano.
- */ 
 
 function calculateScore(array $cards): int
 {
@@ -119,8 +34,103 @@ function calculateScore(array $cards): int
     return $score;
 }
 
+function resolveBlackjackRound(array &$game): void
+{
+    $playerName = 'Jugador ' . ($game['round'] + 1);
+    $playerScore = calculateScore($game['participants'][$playerName]);
+    $bankScore = $game['bank_score'];
+
+    if ($playerScore > 21) {
+        $result = 'PIERDE';
+    } elseif ($bankScore > 21) {
+        $result = 'GANA';
+    } elseif ($playerScore > $bankScore) {
+        $result = 'GANA';
+    } elseif ($playerScore < $bankScore) {
+        $result = 'PIERDE';
+    } else {
+        $result = 'EMPATA';
+    }
+
+    $game['results'][$playerName] = [
+        'score' => $playerScore,
+        'result' => $result,
+    ];
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $game = $_SESSION['blackjack_game'] ?? null;
+    $csrfToken = $_POST['csrf_token'] ?? '';
+
+    if (
+        !is_array($game)
+        || !isset($game['csrf_token'], $game['round'], $game['participants'], $game['results'])
+        || !is_string($csrfToken)
+        || !hash_equals($game['csrf_token'], $csrfToken)
+        || $game['round'] >= 4
+    ) {
+        http_response_code(400);
+        exit('No se pudo avanzar la partida. Inicia una nueva partida e inténtalo otra vez.');
+    }
+
+    $game['round']++;
+    resolveBlackjackRound($game);
+    $_SESSION['blackjack_game'] = $game;
+
+    header('Location: blackjackRoberto.php');
+    exit;
+} elseif ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    http_response_code(405);
+    header('Allow: GET, POST');
+    exit('Método de petición no permitido.');
+}
+
+if (
+    ($_GET['new'] ?? '') === '1'
+    || !isset($_SESSION['blackjack_game'])
+) {
+    $deck = getDeck();
+    array_pop($deck);
+    array_pop($deck);
+    shuffle($deck);
+
+    $participants = [
+        'Banca' => [],
+        'Jugador 1' => [],
+        'Jugador 2' => [],
+        'Jugador 3' => [],
+        'Jugador 4' => [],
+        'Jugador 5' => [],
+    ];
+
+    for ($round = 0; $round < 2; $round++) {
+        foreach ($participants as $name => $cards) {
+            $participants[$name][] = array_pop($deck);
+        }
+    }
+
+    foreach ($participants as $name => $cards) {
+        while (calculateScore($participants[$name]) < 14) {
+            $participants[$name][] = array_pop($deck);
+        }
+    }
+
+    $game = [
+        'participants' => $participants,
+        'bank_score' => calculateScore($participants['Banca']),
+        'round' => 0,
+        'results' => [],
+        'csrf_token' => bin2hex(random_bytes(32)),
+    ];
+    resolveBlackjackRound($game);
+    $_SESSION['blackjack_game'] = $game;
+} else {
+    $game = $_SESSION['blackjack_game'];
+}
+
+$currentPlayer = 'Jugador ' . ($game['round'] + 1);
+$currentResult = $game['results'][$currentPlayer];
 ?>
-<!--html del juego Blackjack-->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -132,71 +142,104 @@ function calculateScore(array $cards): int
 <body>
     <?php include __DIR__ . '/includes/header.php'; ?>
 
-    
-<main class="blackjack-game">
-    <header class="blackjack-intro">
-        <p class="eyebrow">Casino Code presenta</p>
-        <h1>Blackjack</h1>
-        <p>Seis participantes, una banca y una partida automática.</p>
-    </header>
+    <main class="blackjack-game">
+        <header class="blackjack-intro">
+            <p class="eyebrow">Casino Code presenta</p>
+            <h1>Blackjack</h1>
+            <p>Cinco manos frente a la banca. Se muestra una mano cada vez.</p>
+        </header>
 
-    <section class="blackjack-bank">
-        <h2>Banca</h2>
-
-        <p class="blackjack-score">
-            Puntuación: <strong><?= $bankScore ?></strong>
+        <p class="blackjack-round-number">
+            Mano <?= $game['round'] + 1 ?> de 5
         </p>
 
-        <ul class="card-list">
-            <?php foreach ($participants['Banca'] as $card): ?>
-                <li>
-                    <img
-                        src="images/<?= htmlspecialchars($card['image'], ENT_QUOTES, 'UTF-8') ?>"
-                        alt="<?= htmlspecialchars($card['suit'] . ' ' . $card['value'], ENT_QUOTES, 'UTF-8') ?>"
-                        loading="lazy"
-                    >
-                </li>
-            <?php endforeach; ?>
-        </ul>
-    </section>
+        <section class="blackjack-bank">
+            <h2>Banca</h2>
+            <p class="blackjack-score">
+                Puntuación: <strong><?= $game['bank_score'] ?></strong>
+            </p>
+            <ul class="card-list">
+                <?php foreach ($game['participants']['Banca'] as $card): ?>
+                    <li>
+                        <img
+                            src="images/<?= htmlspecialchars($card['image'], ENT_QUOTES, 'UTF-8') ?>"
+                            alt="<?= htmlspecialchars($card['suit'] . ' ' . $card['value'], ENT_QUOTES, 'UTF-8') ?>"
+                        >
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </section>
 
-    <section class="blackjack-players">
-        <h2>Resultados de la partida</h2>
-
-        <?php foreach ($results as $name => $result): ?>
+        <section class="blackjack-players">
+            <h2>Mano actual</h2>
             <article class="blackjack-player">
-                <h3><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></h3>
-
+                <h3><?= htmlspecialchars($currentPlayer, ENT_QUOTES, 'UTF-8') ?></h3>
                 <p class="blackjack-score">
-                    Puntuación: <strong><?= $result['score'] ?></strong>
+                    Puntuación: <strong><?= $currentResult['score'] ?></strong>
                 </p>
-
                 <p class="blackjack-result">
-                    Resultado:
-                    <strong><?= htmlspecialchars($result['result'], ENT_QUOTES, 'UTF-8') ?></strong>
+                    Resultado: <strong><?= htmlspecialchars($currentResult['result'], ENT_QUOTES, 'UTF-8') ?></strong>
                 </p>
-
                 <ul class="card-list">
-                    <?php foreach ($participants[$name] as $card): ?>
+                    <?php foreach ($game['participants'][$currentPlayer] as $card): ?>
                         <li>
                             <img
                                 src="images/<?= htmlspecialchars($card['image'], ENT_QUOTES, 'UTF-8') ?>"
                                 alt="<?= htmlspecialchars($card['suit'] . ' ' . $card['value'], ENT_QUOTES, 'UTF-8') ?>"
-                                loading="lazy"
                             >
                         </li>
                     <?php endforeach; ?>
                 </ul>
             </article>
-        <?php endforeach; ?>
-    </section>
+        </section>
 
-    <nav class="blackjack-actions" aria-label="Acciones de la partida">
-        <a class="back-link" href="blackjackRoberto.php">Nueva partida</a>
-        <a class="back-link" href="index.php">Volver al inicio</a>
-    </nav>
-</main>
+        <nav class="blackjack-actions" aria-label="Acciones de la partida">
+            <?php if ($game['round'] < 4): ?>
+                <form action="blackjackRoberto.php" method="post">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="<?= htmlspecialchars($game['csrf_token'], ENT_QUOTES, 'UTF-8') ?>"
+                    >
+                    <button type="submit">Siguiente mano</button>
+                </form>
+            <?php else: ?>
+                <p class="blackjack-final-result">Fin de la partida</p>
+            <?php endif; ?>
+            <a class="back-link" href="blackjackRoberto.php?new=1">Nueva partida</a>
+            <a class="back-link" href="index.php">Volver al inicio</a>
+        </nav>
 
+        <?php if ($game['round'] === 4): ?>
+            <section class="blackjack-summary" aria-labelledby="blackjack-summary-title">
+                <h2 id="blackjack-summary-title">Resumen de las cinco manos</h2>
+                <div class="blackjack-summary-grid">
+                    <?php foreach ($game['results'] as $name => $result): ?>
+                        <article class="blackjack-summary-hand">
+                            <h3><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></h3>
+                            <p class="blackjack-score">
+                                Puntuación: <strong><?= $result['score'] ?></strong>
+                            </p>
+                            <p class="blackjack-result">
+                                Resultado: <strong><?= htmlspecialchars($result['result'], ENT_QUOTES, 'UTF-8') ?></strong>
+                            </p>
+                            <ul class="card-list">
+                                <?php foreach ($game['participants'][$name] as $card): ?>
+                                    <li>
+                                        <img
+                                            src="images/<?= htmlspecialchars($card['image'], ENT_QUOTES, 'UTF-8') ?>"
+                                            alt="<?= htmlspecialchars($card['suit'] . ' ' . $card['value'], ENT_QUOTES, 'UTF-8') ?>"
+                                            loading="lazy"
+                                        >
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
+    </main>
 
     <?php include __DIR__ . '/includes/footer.php'; ?>
 </body>

@@ -647,6 +647,18 @@ footer p {
 
 }
 
+.higher-round-number {
+
+    margin: 0 0 0.5rem;
+
+    color: var(--color-muted);
+
+    font-size: 0.85rem;
+
+    font-weight: 700;
+
+}
+
 .scoreboard {
 
     display: grid;
@@ -742,6 +754,12 @@ footer p {
     display: grid;
 
     gap: 0.65rem;
+
+}
+
+.higher-round {
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 
 }
 
@@ -857,6 +875,116 @@ footer p {
 
 }
 
+.higher-actions {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 0.75rem;
+
+    margin-top: 0.75rem;
+
+}
+
+.higher-actions form,
+
+.higher-actions .back-link {
+
+    margin: 0;
+
+}
+
+.higher-actions .game-result {
+
+    flex-basis: 100%;
+
+    padding-top: 0;
+
+    border-top: 0;
+
+}
+
+.higher-summary {
+
+    margin-top: 1.5rem;
+
+}
+
+.higher-summary > h2 {
+
+    margin: 0 0 0.75rem;
+
+    font-size: 1.25rem;
+
+}
+
+.higher-summary-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+
+    gap: 0.65rem;
+
+}
+
+.higher-summary-hand {
+
+    min-width: 0;
+
+    padding: 0.6rem;
+
+    border: 1px solid var(--color-border);
+
+    border-radius: 0.8rem;
+
+    background: rgb(16 39 66 / 88%);
+
+}
+
+.higher-summary-hand h3 {
+
+    margin: 0 0 0.4rem;
+
+    font-size: 0.9rem;
+
+}
+
+.higher-summary-cards {
+
+    display: flex;
+
+    justify-content: center;
+
+    gap: 0.35rem;
+
+}
+
+.higher-summary-cards img {
+
+    width: min(42%, 58px);
+
+    height: auto;
+
+    border-radius: 0.35rem;
+
+}
+
+.higher-summary-hand p {
+
+    margin: 0.4rem 0 0;
+
+    color: var(--color-muted);
+
+    font-size: 0.75rem;
+
+}
+
 @media (max-width: 600px) {
 
     .higher-game {
@@ -887,6 +1015,12 @@ footer p {
 
     }
 
+    .higher-summary-grid {
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    }
+
 }
 
 /* Blackjack: diseño compacto para mostrar la partida en una pantalla */
@@ -905,9 +1039,76 @@ footer p {
     margin-top: 8px;
 }
 
+.blackjack-actions form {
+    margin: 0;
+}
+
 .blackjack-actions .back-link,
 .blackjack-actions .logout-form {
     margin: 0;
+}
+
+.blackjack-round-number {
+    margin: 0 0 6px;
+    color: var(--color-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.blackjack-final-result {
+    flex-basis: 100%;
+    margin: 0;
+    color: var(--color-accent-light);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.blackjack-summary {
+    margin-top: 16px;
+}
+
+.blackjack-summary > h2 {
+    margin: 0 0 8px;
+    color: var(--color-accent-light);
+    font-size: 1.1rem;
+}
+
+.blackjack-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.blackjack-summary-hand {
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid rgba(182, 220, 255, 0.8);
+    border-radius: 10px;
+    color: #243447;
+    background: rgba(182, 220, 255, 0.84);
+}
+
+.blackjack-summary-hand h3 {
+    margin: 0 0 4px;
+    color: #234936;
+    font-size: 0.9rem;
+}
+
+.blackjack-summary-hand .blackjack-score,
+.blackjack-summary-hand .blackjack-result {
+    margin: 2px 0;
+    color: #243447;
+    font-size: 0.72rem;
+}
+
+.blackjack-summary-hand .card-list {
+    margin-top: 6px;
+}
+
+.blackjack-summary-hand .card-list img {
+    width: 32px;
 }
 
 .blackjack-intro {
@@ -1067,6 +1268,10 @@ footer p {
     .blackjack-game {
         width: 94%;
         padding: 10px 0;
+    }
+
+    .blackjack-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .blackjack-players {

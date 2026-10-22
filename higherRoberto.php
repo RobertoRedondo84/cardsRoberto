@@ -6,50 +6,94 @@ if (!isset($_SESSION['username'])) {
     exit;
 }
 
-/*
- * Para implementar las rondas mano a mano, sustituye la lógica de partida
- * que empieza debajo y termina antes del HTML:
- * 1. Guarda en $_SESSION las cartas, la ronda actual y los marcadores.
- * 2. Reparte y baraja solo al iniciar una partida nueva.
- * 3. Cuando llegue el formulario "Siguiente mano" por POST, compara solo
- *    las cartas de la ronda actual, actualiza el marcador y avanza la ronda.
- * 4. En el HTML muestra solo las cartas de esa ronda; al completar las diez,
- *    muestra el resultado final.
- * Así no se genera una partida nueva en cada petición.
- */
 require_once __DIR__ . '/getdeck.php';
-// Obtener el mazo de cartas y barajarlo
-$deck = getDeck();
-shuffle($deck);
 
-$player1 = [];
-$player2 = [];
-// Repartir 10 cartas a cada jugador
-for ($i = 0; $i < 10; $i++) {
-    $player1[] = array_pop($deck);
-    $player2[] = array_pop($deck);
-}
+function resolveHigherRound(array &$game): void
+{
+    $round = $game['round'];
+    $value1 = $game['player1'][$round]['value'];
+    $value2 = $game['player2'][$round]['value'];
+    $rank1 = $value1 === 'joker' ? 14 : (int) $value1;
+    $rank2 = $value2 === 'joker' ? 14 : (int) $value2;
 
-$score1 = 0;
-$score2 = 0;
-// Comparar las cartas de cada jugador y contar las rondas ganadas
-for ($i = 0; $i < 10; $i++) {
-    if ($player1[$i]['value'] > $player2[$i]['value']) {
-        $score1++;
-    } elseif ($player1[$i]['value'] < $player2[$i]['value']) {
-        $score2++;
+    if ($rank1 > $rank2) {
+        $game['score1']++;
+        $game['round_result'] = 'Gana el jugador 1 esta mano.';
+    } elseif ($rank1 < $rank2) {
+        $game['score2']++;
+        $game['round_result'] = 'Gana el jugador 2 esta mano.';
+    } else {
+        $game['round_result'] = 'Esta mano termina en empate.';
+    }
+
+    if ($game['round'] === 9) {
+        if ($game['score1'] > $game['score2']) {
+            $game['result'] = '¡Gana el jugador 1!';
+            $game['result_class'] = 'player-one';
+        } elseif ($game['score1'] < $game['score2']) {
+            $game['result'] = '¡Gana el jugador 2!';
+            $game['result_class'] = 'player-two';
+        } else {
+            $game['result'] = '¡Empate!';
+            $game['result_class'] = 'draw';
+        }
     }
 }
-// Determinar el resultado final del juego
-if ($score1 > $score2) {
-    $result = '¡Gana el jugador 1!';
-    $resultClass = 'player-one';
-} elseif ($score1 < $score2) {
-    $result = '¡Gana el jugador 2!';
-    $resultClass = 'player-two';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $game = $_SESSION['higher_game'] ?? null;
+    $csrfToken = $_POST['csrf_token'] ?? '';
+
+    if (
+        !is_array($game)
+        || !isset($game['csrf_token'])
+        || !is_string($csrfToken)
+        || !hash_equals($game['csrf_token'], $csrfToken)
+        || $game['round'] >= 9
+    ) {
+        http_response_code(400);
+        exit('No se pudo avanzar la partida. Inicia una nueva partida e inténtalo otra vez.');
+    }
+
+    $game['round']++;
+    resolveHigherRound($game);
+    $_SESSION['higher_game'] = $game;
+
+    header('Location: higherRoberto.php');
+    exit;
+} elseif ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    http_response_code(405);
+    header('Allow: GET, POST');
+    exit('Método de petición no permitido.');
+}
+
+if (
+    ($_GET['new'] ?? '') === '1'
+    || !isset($_SESSION['higher_game'])
+) {
+    $deck = getDeck();
+    shuffle($deck);
+    $player1 = [];
+    $player2 = [];
+
+    for ($i = 0; $i < 10; $i++) {
+        $player1[] = array_pop($deck);
+        $player2[] = array_pop($deck);
+    }
+
+    $game = [
+        'player1' => $player1,
+        'player2' => $player2,
+        'round' => 0,
+        'score1' => 0,
+        'score2' => 0,
+        'round_result' => '',
+        'csrf_token' => bin2hex(random_bytes(32)),
+    ];
+    resolveHigherRound($game);
+    $_SESSION['higher_game'] = $game;
 } else {
-    $result = '¡Empate!';
-    $resultClass = 'draw';
+    $game = $_SESSION['higher_game'];
 }
 ?>
 <!-- html del juego Higher -->
@@ -68,55 +112,109 @@ if ($score1 > $score2) {
         <div class="higher-intro">
             <p class="eyebrow">Casino Code presenta</p>
             <h1>Higher</h1>
-            <p>Diez rondas: gana quien consiga más cartas de valor superior.</p>
+            <p>Diez manos: gana quien consiga más cartas de valor superior.</p>
         </div>
-<!--html del marcador de puntuación-->
+
+        <p class="higher-round-number">Mano <?= $game['round'] + 1 ?> de 10</p>
+
         <section class="scoreboard" aria-label="Resultado de la partida">
             <div class="score">
                 <span>Jugador 1</span>
-                <strong><?= $score1 ?></strong>
-                <span class="score-caption">rondas ganadas</span>
+                <strong><?= $game['score1'] ?></strong>
+                <span class="score-caption">manos ganadas</span>
             </div>
             <div class="score-divider" aria-hidden="true">VS</div>
             <div class="score">
                 <span>Jugador 2</span>
-                <strong><?= $score2 ?></strong>
-                <span class="score-caption">rondas ganadas</span>
+                <strong><?= $game['score2'] ?></strong>
+                <span class="score-caption">manos ganadas</span>
             </div>
-            <p class="game-result <?= htmlspecialchars($resultClass, ENT_QUOTES, 'UTF-8') ?>">
-                <?= htmlspecialchars($result, ENT_QUOTES, 'UTF-8') ?>
+            <p class="game-result">
+                <?= htmlspecialchars($game['round_result'], ENT_QUOTES, 'UTF-8') ?>
             </p>
         </section>
-<!--html de las cartas de los jugadores-->
-        <div class="players">
+
+        <div class="players higher-round">
             <?php foreach ([
-                ['name' => 'Jugador 1', 'cards' => $player1],
-                ['name' => 'Jugador 2', 'cards' => $player2],
+                ['name' => 'Jugador 1', 'card' => $game['player1'][$game['round']]],
+                ['name' => 'Jugador 2', 'card' => $game['player2'][$game['round']]],
             ] as $player): ?>
+                <?php
+                $suit = (string) $player['card']['suit'];
+                $value = (string) $player['card']['value'];
+                $alt = $suit . ' ' . $value;
+                ?>
                 <section class="player-panel">
                     <h2><?= htmlspecialchars($player['name'], ENT_QUOTES, 'UTF-8') ?></h2>
                     <ul class="card-list">
-                        <?php foreach ($player['cards'] as $card): ?>
-                            <?php
-                            $suit = (string) $card['suit'];
-                            $value = (string) $card['value'];
-                            $alt = $suit . ' ' . $value;
-                            ?>
-                            <li>
-                                <img
-                                    src="images/<?= htmlspecialchars($card['image'], ENT_QUOTES, 'UTF-8') ?>"
-                                    alt="<?= htmlspecialchars($alt, ENT_QUOTES, 'UTF-8') ?>"
-                                    loading="lazy"
-                                >
-                            </li>
-                        <?php endforeach; ?>
+                        <li>
+                            <img
+                                src="images/<?= htmlspecialchars($player['card']['image'], ENT_QUOTES, 'UTF-8') ?>"
+                                alt="<?= htmlspecialchars($alt, ENT_QUOTES, 'UTF-8') ?>"
+                            >
+                        </li>
                     </ul>
                 </section>
             <?php endforeach; ?>
         </div>
 
-        <a class="back-link" href="higherRoberto.php">Nueva partida</a>
-        <a class="back-link" href="index.php">Volver al inicio</a>
+        <div class="higher-actions">
+            <?php if ($game['round'] < 9): ?>
+                <form action="higherRoberto.php" method="post">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="<?= htmlspecialchars($game['csrf_token'], ENT_QUOTES, 'UTF-8') ?>"
+                    >
+                    <button type="submit">Siguiente mano</button>
+                </form>
+            <?php else: ?>
+                <p class="game-result <?= htmlspecialchars($game['result_class'], ENT_QUOTES, 'UTF-8') ?>">
+                    <?= htmlspecialchars($game['result'], ENT_QUOTES, 'UTF-8') ?>
+                </p>
+            <?php endif; ?>
+            <a class="back-link" href="higherRoberto.php?new=1">Nueva partida</a>
+            <a class="back-link" href="index.php">Volver al inicio</a>
+        </div>
+
+        <?php if ($game['round'] === 9): ?>
+            <section class="higher-summary" aria-labelledby="higher-summary-title">
+                <h2 id="higher-summary-title">Resumen de las diez manos</h2>
+                <div class="higher-summary-grid">
+                    <?php for ($round = 0; $round < 10; $round++): ?>
+                        <?php
+                        $card1 = $game['player1'][$round];
+                        $card2 = $game['player2'][$round];
+                        $value1 = $card1['value'] === 'joker' ? 14 : (int) $card1['value'];
+                        $value2 = $card2['value'] === 'joker' ? 14 : (int) $card2['value'];
+                        if ($value1 > $value2) {
+                            $roundWinner = 'Jugador 1';
+                        } elseif ($value1 < $value2) {
+                            $roundWinner = 'Jugador 2';
+                        } else {
+                            $roundWinner = 'Empate';
+                        }
+                        ?>
+                        <article class="higher-summary-hand">
+                            <h3>Mano <?= $round + 1 ?></h3>
+                            <div class="higher-summary-cards">
+                                <?php foreach ([$card1, $card2] as $card): ?>
+                                    <?php
+                                    $alt = (string) $card['suit'] . ' ' . (string) $card['value'];
+                                    ?>
+                                    <img
+                                        src="images/<?= htmlspecialchars($card['image'], ENT_QUOTES, 'UTF-8') ?>"
+                                        alt="<?= htmlspecialchars($alt, ENT_QUOTES, 'UTF-8') ?>"
+                                        loading="lazy"
+                                    >
+                                <?php endforeach; ?>
+                            </div>
+                            <p><?= htmlspecialchars($roundWinner, ENT_QUOTES, 'UTF-8') ?></p>
+                        </article>
+                    <?php endfor; ?>
+                </div>
+            </section>
+        <?php endif; ?>
     </main>
 
     <?php include __DIR__ . '/includes/footer.php'; ?>
