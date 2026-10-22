@@ -1,4 +1,12 @@
 <?php
+session_start();
+
+if (!isset($_SESSION['username'])) {
+    header('Location: login.php');
+    exit;
+}
+?> 
+<?php
 require_once __DIR__ . '/getdeck.php';
 // Obtener el mazo de cartas y barajarlo
 $deck = getDeck();
