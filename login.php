@@ -19,7 +19,7 @@
 
     <!--formulario para solicitar usuario y contraseña-->
 
-<form action="processLogin.php" method="post">
+<form action="processLogin.php" method="post"> <!--metodo post-->
  <label for="username">Nombre:</label>
  <input type="text" id="username" name="username" required>
 

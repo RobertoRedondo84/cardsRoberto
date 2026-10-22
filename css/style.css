@@ -150,6 +150,44 @@ main h1 {
 
 }
 
+.login-feedback {
+
+    max-width: 620px;
+
+    margin: 0 auto;
+
+    padding: clamp(1.5rem, 5vw, 3rem);
+
+    border: 1px solid rgb(255 132 132 / 55%);
+
+    border-radius: 1.25rem;
+
+    background: linear-gradient(145deg, rgb(16 39 68 / 95%), rgb(10 27 48 / 95%));
+
+    box-shadow: var(--shadow);
+
+}
+
+.login-feedback .eyebrow {
+
+    color: #ffb2b2;
+
+    font-weight: 700;
+
+    letter-spacing: 0.12em;
+
+    text-transform: uppercase;
+
+}
+
+.login-feedback > p:not(.eyebrow) {
+
+    margin: 0 auto 1.5rem;
+
+    color: var(--color-muted);
+
+}
+
 h2,
 
 h3 {
