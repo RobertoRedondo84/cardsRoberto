@@ -1,6 +1,7 @@
 
-<!--Html de la página-->
-
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>

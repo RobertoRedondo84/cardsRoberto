@@ -5,8 +5,18 @@ if (!isset($_SESSION['username'])) {
     header('Location: login.php');
     exit;
 }
-?> 
-<?php
+
+/*
+ * Para implementar las rondas mano a mano, sustituye la lógica de partida
+ * que empieza debajo y termina antes del HTML:
+ * 1. Guarda en $_SESSION las cartas, la ronda actual y los marcadores.
+ * 2. Reparte y baraja solo al iniciar una partida nueva.
+ * 3. Cuando llegue el formulario "Siguiente mano" por POST, compara solo
+ *    las cartas de la ronda actual, actualiza el marcador y avanza la ronda.
+ * 4. En el HTML muestra solo las cartas de esa ronda; al completar las diez,
+ *    muestra el resultado final.
+ * Así no se genera una partida nueva en cada petición.
+ */
 require_once __DIR__ . '/getdeck.php';
 // Obtener el mazo de cartas y barajarlo
 $deck = getDeck();
@@ -105,6 +115,7 @@ if ($score1 > $score2) {
             <?php endforeach; ?>
         </div>
 
+        <a class="back-link" href="higherRoberto.php">Nueva partida</a>
         <a class="back-link" href="index.php">Volver al inicio</a>
     </main>
 

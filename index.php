@@ -28,6 +28,7 @@ if (!isset($_SESSION['username'])) {
                 <li><a href="higherRoberto.php">Jugar a Higher</a></li>
             </ul>
         </nav>
+
     </div>
 
     <?php include __DIR__ . '/includes/footer.php'; ?>

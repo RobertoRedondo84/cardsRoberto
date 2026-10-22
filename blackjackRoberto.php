@@ -1,4 +1,12 @@
 <?php
+session_start();
+
+if (!isset($_SESSION['username'])) {
+    header('Location: login.php');
+    exit;
+}
+?> 
+<?php
 
 require_once __DIR__ . '/getdeck.php';
 
@@ -139,6 +147,16 @@ function calculateScore(array $cards): int
             Puntuación: <strong><?= $bankScore ?></strong>
         </p>
 
+        <ul class="card-list">
+            <?php foreach ($participants['Banca'] as $card): ?>
+                <li>
+                    <img
+                        src="images/<?= htmlspecialchars($card['image'], ENT_QUOTES, 'UTF-8') ?>"
+                        alt="<?= htmlspecialchars($card['suit'] . ' ' . $card['value'], ENT_QUOTES, 'UTF-8') ?>"
+                        loading="lazy"
+                    >
+                </li>
+            <?php endforeach; ?>
         </ul>
     </section>
 
@@ -173,7 +191,10 @@ function calculateScore(array $cards): int
         <?php endforeach; ?>
     </section>
 
-    <a class="back-link" href="index.php">Volver al inicio</a>
+    <nav class="blackjack-actions" aria-label="Acciones de la partida">
+        <a class="back-link" href="blackjackRoberto.php">Nueva partida</a>
+        <a class="back-link" href="index.php">Volver al inicio</a>
+    </nav>
 </main>
 
 
